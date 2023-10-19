@@ -15,3 +15,8 @@ venv
 # ide
 .idea
 *.swp
+
+#images
+*.png
+*.jpg
+*.jpeg
