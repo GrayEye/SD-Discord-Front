@@ -1,0 +1,17 @@
+# test / coverage
+.coverage
+.pytest_cache
+.pytest
+
+# mypy
+.mypy_cache
+
+# venv
+.env
+.venv
+venv
+.py311
+
+# ide
+.idea
+*.swp
