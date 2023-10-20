@@ -7,6 +7,7 @@
 .mypy_cache
 
 # venv
+.env
 .venv
 venv
 .py311
@@ -19,6 +20,3 @@ venv
 *.png
 *.jpg
 *.jpeg
-
-#env
-deploy.env

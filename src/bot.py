@@ -5,11 +5,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = discord.Client()
+#intents
+intents = discord.Intents.default()
+intents.message_content = True
+
+client = discord.Client(intents=intents)
 token = os.getenv('TOKEN')
-
-
-
 
 @client.event
 async def on_ready():

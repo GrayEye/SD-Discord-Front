@@ -1,6 +1,8 @@
 FROM python:3.11-slim-bullseye
 
-COPY . /app
 WORKDIR /app
+COPY . /app
 
-RUN pip install -r requirments.txt
+RUN pip install -r requirements.txt
+
+CMD ["python", "./src/bot.py"]
