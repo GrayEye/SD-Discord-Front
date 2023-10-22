@@ -1,3 +1,4 @@
+import ast
 import base64
 import discord
 import hashlib
@@ -13,6 +14,7 @@ from PIL import Image
 load_dotenv()
 token = os.getenv('TOKEN')
 url = os.getenv('URL')
+modelDict = ast.literal_eval(os.getenv('MODELS'))
 
 intents = Intents.default()
 intents.message_content = True
@@ -20,15 +22,26 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.command()
-async def prompt(ctx, *args):
-    imageName = get_image(build_payload(' '. join(args)), url)
-    await ctx.send(file=discord.File(imageName))
+async def draw(ctx, *args):
+    payload = build_payload(' '. join(args), modelDict)
+    imageName = get_image(payload, url)
+    await ctx.send(str(payload), file=discord.File(imageName))
 
-def build_payload(input):
-    payload = {
-        "prompt": input,
-        "steps": 20
-    }
+def build_payload(input, modelDict):
+    parts = input.split('|')
+    trimmedParts = [s.strip() for s in parts]
+    filteredDict = {s.split(maxsplit=1)[0]: s.split(maxsplit=1)[1] for s in trimmedParts if
+                    ':' in s.split(maxsplit=1)[0]}
+    lowercaseDict = {key.lower(): value.lower() for key, value in filteredDict.items()}
+    payload = {key.replace(':', ''): value for key, value in lowercaseDict.items()}
+
+    if 'model' in payload:
+        if payload.get('model') in modelDict:
+            override_settings = {
+                "sd_model_checkpoint": modelDict.get(payload.get('model'))
+            }
+            payload["override_settings"] = override_settings
+
     return payload
 
 def get_image(payload, url):
