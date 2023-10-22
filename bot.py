@@ -26,6 +26,7 @@ async def draw(ctx, *args):
     payload = build_payload(' '. join(args), modelDict)
     imageName = get_image(payload, url)
     await ctx.send(str(payload), file=discord.File(imageName))
+    os.remove(imageName)
 
 def build_payload(input, modelDict):
     parts = input.split('|')
