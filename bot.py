@@ -17,6 +17,7 @@ url = os.getenv('URL')
 modelDict = ast.literal_eval(os.getenv('MODELS'))
 disallowedList = ast.literal_eval(os.getenv('DISALLOWED'))
 maximumValues = ast.literal_eval(os.getenv('MAX_VALUES'))
+defaultValues = ast.literal_eval(os.getenv('DEFAULT_VALUES'))
 
 intents = Intents.default()
 intents.message_content = True
@@ -25,14 +26,15 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.command()
 async def draw(ctx, *args):
     payload = build_payload(' '. join(args), modelDict)
-    payload = trim_payload(payload, disallowedList, maximumValues)
+    payload = trim_payload(payload, disallowedList, maximumValues, defaultValues)
     imageName = get_image(payload, url)
     await ctx.send("The inputs for this image: " + str(payload), file=discord.File(imageName))
     os.remove(imageName)
 
 #Removes dissallowed api requests
 #Trims max size for certain variables
-def trim_payload(payload, disallowedList, maximumValues):
+#add default values
+def trim_payload(payload, disallowedList, maximumValues, defaultValues):
     items_to_remove = []
     for item in disallowedList:
         if item in payload:
@@ -43,6 +45,10 @@ def trim_payload(payload, disallowedList, maximumValues):
     for key in payload:
         if key in maximumValues and int(payload[key]) > maximumValues[key]:
             payload[key] = str(maximumValues[key])
+
+    for key in defaultValues:
+        if key not in payload:
+            payload[key] = defaultValues[key]
     return payload
 
 def build_payload(input, modelDict):
