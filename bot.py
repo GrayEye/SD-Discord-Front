@@ -16,23 +16,34 @@ token = os.getenv('TOKEN')
 url = os.getenv('URL')
 modelDict = ast.literal_eval(os.getenv('MODELS'))
 disallowedList = ast.literal_eval(os.getenv('DISALLOWED'))
+maximumValues = ast.literal_eval(os.getenv('MAX_VALUES'))
 
 intents = Intents.default()
 intents.message_content = True
-
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.command()
 async def draw(ctx, *args):
     payload = build_payload(' '. join(args), modelDict)
+    payload = trim_payload(payload, disallowedList, maximumValues)
     imageName = get_image(payload, url)
-    await ctx.send(str(payload), file=discord.File(imageName))
+    await ctx.send("The inputs for this image: " + str(payload), file=discord.File(imageName))
     os.remove(imageName)
 
-#trims max size for certain variables
-def trim_payload(dirtyPayload):
+#Removes dissallowed api requests
+#Trims max size for certain variables
+def trim_payload(payload, disallowedList, maximumValues):
+    items_to_remove = []
+    for item in disallowedList:
+        if item in payload:
+            items_to_remove.append(item)
+    for item in items_to_remove:
+        del payload[item]
 
-    return cleanPayload
+    for key in payload:
+        if key in maximumValues and int(payload[key]) > maximumValues[key]:
+            payload[key] = str(maximumValues[key])
+    return payload
 
 def build_payload(input, modelDict):
     parts = input.split('|')
@@ -48,7 +59,10 @@ def build_payload(input, modelDict):
                 "sd_model_checkpoint": modelDict.get(payload.get('model'))
             }
             payload["override_settings"] = override_settings
-
+        else:
+            payload['model'] = modelDict['default']
+    else:
+        payload['model'] = modelDict['default']
     return payload
 
 def get_image(payload, url):
@@ -58,6 +72,5 @@ def get_image(payload, url):
     imageName = hashlib.md5(image.tobytes()).hexdigest() + '.png'
     image.save(imageName)
     return imageName
-
 
 bot.run(token)
