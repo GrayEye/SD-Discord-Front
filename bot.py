@@ -15,6 +15,7 @@ load_dotenv()
 token = os.getenv('TOKEN')
 url = os.getenv('URL')
 modelDict = ast.literal_eval(os.getenv('MODELS'))
+disallowedList = ast.literal_eval(os.getenv('DISALLOWED'))
 
 intents = Intents.default()
 intents.message_content = True
@@ -27,6 +28,11 @@ async def draw(ctx, *args):
     imageName = get_image(payload, url)
     await ctx.send(str(payload), file=discord.File(imageName))
     os.remove(imageName)
+
+#trims max size for certain variables
+def trim_payload(dirtyPayload):
+
+    return cleanPayload
 
 def build_payload(input, modelDict):
     parts = input.split('|')
