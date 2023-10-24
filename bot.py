@@ -27,7 +27,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.command()
 async def draw(ctx, *args):
     payload = build_payload(' '. join(args), modelDict, samplers)
-    payload = trim_payload(payload, samplers, disallowedList, maximumValues, defaultValues)
+    payload = trim_payload(payload, disallowedList, maximumValues, defaultValues)
     imageName = get_image(payload, url)
     await ctx.send("The inputs for this image: " + str(payload), file=discord.File(imageName))
     os.remove(imageName)
