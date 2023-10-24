@@ -18,6 +18,7 @@ modelDict = ast.literal_eval(os.getenv('MODELS'))
 disallowedList = ast.literal_eval(os.getenv('DISALLOWED'))
 maximumValues = ast.literal_eval(os.getenv('MAX_VALUES'))
 defaultValues = ast.literal_eval(os.getenv('DEFAULT_VALUES'))
+samplers = ast.literal_eval(os.getenv('SAMPLERS'))
 
 intents = Intents.default()
 intents.message_content = True
@@ -26,7 +27,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.command()
 async def draw(ctx, *args):
     payload = build_payload(' '. join(args), modelDict)
-    payload = trim_payload(payload, disallowedList, maximumValues, defaultValues)
+    payload = trim_payload(payload, samplers, disallowedList, maximumValues, defaultValues)
     imageName = get_image(payload, url)
     await ctx.send("The inputs for this image: " + str(payload), file=discord.File(imageName))
     os.remove(imageName)
@@ -51,7 +52,7 @@ def trim_payload(payload, disallowedList, maximumValues, defaultValues):
             payload[key] = defaultValues[key]
     return payload
 
-def build_payload(input, modelDict):
+def build_payload(input, modelDict, samplers):
     parts = input.split('|')
     trimmedParts = [s.strip() for s in parts]
     filteredDict = {s.split(maxsplit=1)[0]: s.split(maxsplit=1)[1] for s in trimmedParts if
@@ -69,6 +70,10 @@ def build_payload(input, modelDict):
             payload['model'] = modelDict['default']
     else:
         payload['model'] = modelDict['default']
+
+    if 'sampler' in payload:
+        if payload.get('sampler') in samplers:
+            payload["sampler_name"] = samplers.get(payload.get('sampler'))
     return payload
 
 def get_image(payload, url):
