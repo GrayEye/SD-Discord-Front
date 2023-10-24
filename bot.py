@@ -74,6 +74,10 @@ def build_payload(input, modelDict, samplers):
     if 'sampler' in payload:
         if payload.get('sampler') in samplers:
             payload["sampler_name"] = samplers.get(payload.get('sampler'))
+        else:
+            payload["sampler_name"] = samplers.get('default')
+    else:
+        payload["sampler_name"] = samplers.get('default')
     return payload
 
 def get_image(payload, url):
