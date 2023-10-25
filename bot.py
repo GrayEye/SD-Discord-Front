@@ -27,26 +27,30 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.command()
 async def draw(ctx, *args):
     payload = build_payload(' '. join(args), modelDict, samplers)
-    payload = trim_payload(payload, disallowedList, maximumValues, defaultValues)
+    payload = remove_disallowed_payload(payload, disallowedList)
+    payload = set_maximums(payload, maximumValues)
+    payload = set_defaults(payload, defaultValues)
     imageName = get_image(payload, url)
     await ctx.send("The inputs for this image: " + str(payload), file=discord.File(imageName))
     os.remove(imageName)
 
 #Removes dissallowed api requests
-#Trims max size for certain variables
-#add default values
-def trim_payload(payload, disallowedList, maximumValues, defaultValues):
+def remove_disallowed_payload(payload, disallowedList):
     items_to_remove = []
     for item in disallowedList:
         if item in payload:
             items_to_remove.append(item)
     for item in items_to_remove:
         del payload[item]
+    return payload
 
+def set_maximums(payload, maximumValues):
     for key in payload:
         if key in maximumValues and int(payload[key]) > maximumValues[key]:
             payload[key] = str(maximumValues[key])
+    return payload
 
+def set_defaults(payload, defaultValues):
     for key in defaultValues:
         if key not in payload:
             payload[key] = defaultValues[key]
