@@ -54,6 +54,7 @@ def set_maximums(payload, maximumValues):
                 continue
         if key in maximumValues and int(round(float(payload[key]))) > maximumValues[key]:
             payload[key] = str(maximumValues[key])
+    print(payload)
     return payload
 
 def set_defaults(payload, defaultValues):
@@ -91,7 +92,6 @@ def build_payload(input, modelDict, samplers):
     return payload
 
 def get_image(payload, url):
-    print(payload)
     response = requests.post(url=f'{url}/sdapi/v1/txt2img', json=payload)
     r = response.json()
     image = Image.open(io.BytesIO(base64.b64decode(r['images'][0])))
