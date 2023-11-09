@@ -46,7 +46,9 @@ def remove_disallowed_payload(payload, disallowedList):
 
 def set_maximums(payload, maximumValues):
     for key in payload:
-        if key in maximumValues and int(payload[key]) > maximumValues[key]:
+        if key == "cfg_scale" and float(payload[key]) > maximumValues[key]:
+            payload[key] = str(maximumValues[key])
+        elif key in maximumValues and int(payload[key]) > maximumValues[key]:
             payload[key] = str(maximumValues[key])
     return payload
 
