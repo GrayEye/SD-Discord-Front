@@ -91,6 +91,7 @@ def build_payload(input, modelDict, samplers):
     return payload
 
 def get_image(payload, url):
+    print(payload)
     response = requests.post(url=f'{url}/sdapi/v1/txt2img', json=payload)
     r = response.json()
     image = Image.open(io.BytesIO(base64.b64decode(r['images'][0])))
