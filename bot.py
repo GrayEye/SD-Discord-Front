@@ -34,7 +34,7 @@ async def draw(ctx, *args):
     await ctx.send("The inputs for this image: " + str(payload), file=discord.File(imageName))
     os.remove(imageName)
 
-#Removes dissallowed api requests
+# Removes disallowed api requests
 def remove_disallowed_payload(payload, disallowedList):
     items_to_remove = []
     for item in disallowedList:
@@ -44,6 +44,7 @@ def remove_disallowed_payload(payload, disallowedList):
         del payload[item]
     return payload
 
+# Set maximum values and round floats where not allowed
 def set_maximums(payload, maximumValues):
     for key in payload:
         if key == "cfg_scale":
@@ -51,7 +52,7 @@ def set_maximums(payload, maximumValues):
                 payload[key] = str(maximumValues[key])
             else:
                 continue
-        if key in maximumValues and int(payload[key]) > maximumValues[key]:
+        if key in maximumValues and int(round(float(payload[key]))) > maximumValues[key]:
             payload[key] = str(maximumValues[key])
     return payload
 
