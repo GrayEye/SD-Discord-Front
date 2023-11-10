@@ -27,10 +27,11 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.command()
 async def draw(ctx, *args):
-    payload = build_payload(' '. join(args), modelDict, samplers)
+    payload = build_payload(' '. join(args), samplers)
     payload = remove_invalid_payload(payload, allowedList)
     payload = set_maximums(payload, maximumValues)
     payload = set_defaults(payload, defaultValues)
+    payload = add_model(payload, modelDict)
     imageName = get_image(payload, url)
     await ctx.send("The inputs for this image: " + str(payload), file=discord.File(imageName))
     os.remove(imageName)
@@ -66,7 +67,7 @@ def set_defaults(payload, defaultValues):
             payload[key] = defaultValues[key]
     return payload
 
-def build_payload(input, modelDict, samplers):
+def build_payload(input, samplers):
     parts = input.split('|')
     trimmedParts = [s.strip() for s in parts]
     payload = {}
@@ -75,17 +76,6 @@ def build_payload(input, modelDict, samplers):
         key = key.strip().lower()
         value = value.strip().lower()
         payload[key] = value
-    if 'model' in payload:
-        if payload.get('model') in modelDict:
-            override_settings = {
-                "sd_model_checkpoint": modelDict.get(payload.get('model'))
-            }
-            payload["override_settings"] = override_settings
-        else:
-            payload['model'] = modelDict['default']
-    else:
-        payload['model'] = modelDict['default']
-
     if 'sampler' in payload:
         if payload.get('sampler') in samplers:
             payload["sampler_name"] = samplers.get(payload.get('sampler'))
@@ -93,6 +83,27 @@ def build_payload(input, modelDict, samplers):
             payload["sampler_name"] = samplers.get('default')
     else:
         payload["sampler_name"] = samplers.get('default')
+    return payload
+
+def add_model(payload, modelDict):
+    if 'model' in payload:
+        if payload.get('model') in modelDict:
+            override_settings = {
+                "sd_model_checkpoint": modelDict.get(payload.get('model'))
+            }
+            payload["override_settings"] = override_settings
+        else:
+            override_settings = {
+                "sd_model_checkpoint": modelDict.get('default')
+            }
+            payload["override_settings"] = override_settings
+            payload['model'] = modelDict['default']
+    else:
+        override_settings = {
+            "sd_model_checkpoint": modelDict.get('default')
+        }
+        payload["override_settings"] = override_settings
+        payload['model'] = modelDict['default']
     return payload
 
 def get_image(payload, url):
