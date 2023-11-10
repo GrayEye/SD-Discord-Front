@@ -15,7 +15,8 @@ load_dotenv()
 token = os.getenv('TOKEN')
 url = os.getenv('URL')
 modelDict = ast.literal_eval(os.getenv('MODELS'))
-disallowedList = ast.literal_eval(os.getenv('DISALLOWED'))
+#disallowedList = ast.literal_eval(os.getenv('DISALLOWED'))
+allowedList = ast.literal_eval(os.getenv('ALLOWED'))
 maximumValues = ast.literal_eval(os.getenv('MAX_VALUES'))
 defaultValues = ast.literal_eval(os.getenv('DEFAULT_VALUES'))
 samplers = ast.literal_eval(os.getenv('SAMPLERS'))
@@ -27,7 +28,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.command()
 async def draw(ctx, *args):
     payload = build_payload(' '. join(args), modelDict, samplers)
-    payload = remove_disallowed_payload(payload, disallowedList)
+    payload = remove_invalid_payload(payload, allowedList)
     payload = set_maximums(payload, maximumValues)
     payload = set_defaults(payload, defaultValues)
     imageName = get_image(payload, url)
@@ -35,11 +36,11 @@ async def draw(ctx, *args):
     os.remove(imageName)
 
 # Removes disallowed api requests
-def remove_disallowed_payload(payload, disallowedList):
-    items_to_remove = []
-    for item in disallowedList:
-        if item in payload:
-            items_to_remove.append(item)
+def remove_invalid_payload(payload, allowedList):
+    items_to_remove =[]
+    for key in payload:
+        if key not in allowedList:
+            items_to_remove.append(key)
     for item in items_to_remove:
         del payload[item]
     return payload
@@ -52,9 +53,11 @@ def set_maximums(payload, maximumValues):
                 payload[key] = str(maximumValues[key])
             else:
                 continue
-        if key in maximumValues and int(round(float(payload[key]))) > maximumValues[key]:
-            payload[key] = str(maximumValues[key])
-    print(payload)
+        if key in maximumValues:
+            payload[key] = int(round(float(payload[key])))
+            if payload[key] > maximumValues[key]:
+                payload[key] = str(maximumValues[key])
+            payload[key] = str(payload[key])
     return payload
 
 def set_defaults(payload, defaultValues):
@@ -66,11 +69,12 @@ def set_defaults(payload, defaultValues):
 def build_payload(input, modelDict, samplers):
     parts = input.split('|')
     trimmedParts = [s.strip() for s in parts]
-    filteredDict = {s.split(maxsplit=1)[0]: s.split(maxsplit=1)[1] for s in trimmedParts if
-                    ':' in s.split(maxsplit=1)[0]}
-    lowercaseDict = {key.lower(): value.lower() for key, value in filteredDict.items()}
-    payload = {key.replace(':', ''): value for key, value in lowercaseDict.items()}
-
+    payload = {}
+    for item in trimmedParts:
+        key, value = item.split(':', 1)
+        key = key.strip().lower()
+        value = value.strip().lower()
+        payload[key] = value
     if 'model' in payload:
         if payload.get('model') in modelDict:
             override_settings = {
