@@ -2,3 +2,4 @@ discord
 pillow
 requests
 python-dotenv
+pre-commit
