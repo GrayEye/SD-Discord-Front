@@ -15,6 +15,7 @@ load_dotenv()
 token = os.getenv('TOKEN')
 url = os.getenv('URL')
 modelDict = ast.literal_eval(os.getenv('MODELS'))
+vaeCompatibilityDict = ast.literal_eval(os.getenv('VAESANDCOMPATIBILITY'))
 #disallowedList = ast.literal_eval(os.getenv('DISALLOWED'))
 allowedList = ast.literal_eval(os.getenv('ALLOWED'))
 maximumValues = ast.literal_eval(os.getenv('MAX_VALUES'))
@@ -32,6 +33,7 @@ async def draw(ctx, *args):
     payload = set_maximums(payload, maximumValues)
     payload = set_defaults(payload, defaultValues)
     payload = add_model(payload, modelDict)
+    payload = add_vae(payload, vaeCompatibilityDict)
     imageName = get_image(payload, url)
     await ctx.send("The inputs for this image: " + str(payload), file=discord.File(imageName))
     os.remove(imageName)
@@ -67,6 +69,7 @@ def set_defaults(payload, defaultValues):
             payload[key] = defaultValues[key]
     return payload
 
+#Manipulates raw user input
 def build_payload(input, samplers):
     parts = input.split('|')
     trimmedParts = [s.strip() for s in parts]
@@ -88,10 +91,10 @@ def build_payload(input, samplers):
 def add_model(payload, modelDict):
     if 'model' in payload:
         if payload.get('model') in modelDict:
-            override_settings = {
+            overrideSettings = {
                 "sd_model_checkpoint": modelDict.get(payload.get('model'))
             }
-            payload["override_settings"] = override_settings
+            payload["override_settings"] = overrideSettings
         else:
             override_settings = {
                 "sd_model_checkpoint": modelDict.get('default')
@@ -99,11 +102,22 @@ def add_model(payload, modelDict):
             payload["override_settings"] = override_settings
             payload['model'] = modelDict['default']
     else:
-        override_settings = {
+        overrideSettings = {
             "sd_model_checkpoint": modelDict.get('default')
         }
-        payload["override_settings"] = override_settings
+        payload["override_settings"] = overrideSettings
         payload['model'] = modelDict['default']
+    return payload
+
+def add_vae(payload, vaeDict):
+    vae = "None"
+    overrideSettings = payload.get("override_settings")
+    model = overrideSettings.get("sd_model_checkpoint")
+    for key, values in vaeDict.items():
+        if model in values:
+            vae = key
+    overrideSettings["sd_vae"] = vae
+    payload["override_settings"] = overrideSettings
     return payload
 
 def get_image(payload, url):
