@@ -29,13 +29,19 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.command()
 async def draw(ctx, *args):
-    payload = build_payload(' '. join(args), samplers)
+    isReady = True
+    try:
+        payload = build_payload(' '. join(args), samplers)
+    except:
+        isReady = False
+        await ctx.send("Payload generation Failed. Likely blank `!draw` command.")
     payload = remove_invalid_payload(payload, allowedList)
     payload = set_maximums(payload, maximumValues)
     payload = set_defaults(payload, defaultValues)
     payload = add_model(payload, modelDict)
     payload = add_vae(payload, vaeCompatibilityDict)
-    if ready_check(payload):
+    promptReady = ready_check(payload)
+    if isReady and promptReady:
         try:
             imageName = get_image(payload, url)
             await ctx.send("The inputs for this image: " + str(payload), file=discord.File(imageName))
@@ -43,7 +49,10 @@ async def draw(ctx, *args):
         except:
             await ctx.send("Image generation failed. Inputs used for this attempt: " + str(payload))
     else:
-        await ctx.send("Image generation failed. No Prompt.")
+        errorMessage = "Image generation failed."
+        if not promptReady:
+            errorMessage = errorMessage + " No prompt, blank prompt, or misspelled the key 'prompt'."
+        await ctx.send(errorMessage + " Try again or contact bot owner if issues persist.")
 
 #Remove disallowed prompts and ensure no blank items in a prompt
 def sanitize_prompt(payload, forbiddenPrompt):
@@ -57,7 +66,7 @@ def sanitize_prompt(payload, forbiddenPrompt):
 
 def ready_check(payload):
     status = False
-    if "prompt" in payload:
+    if "prompt" in payload and payload["prompt"]:
         status = True
     return status
 
