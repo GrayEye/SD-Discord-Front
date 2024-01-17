@@ -15,12 +15,13 @@ load_dotenv()
 token = os.getenv('TOKEN')
 url = os.getenv('URL')
 modelDict = ast.literal_eval(os.getenv('MODELS'))
-vaeCompatibilityDict = ast.literal_eval(os.getenv('VAESANDCOMPATIBILITY'))
+vaeCompatibilityDict = ast.literal_eval(os.getenv('VAES_AND_COMPATIBILITY'))
 #disallowedList = ast.literal_eval(os.getenv('DISALLOWED'))
 allowedList = ast.literal_eval(os.getenv('ALLOWED'))
 maximumValues = ast.literal_eval(os.getenv('MAX_VALUES'))
 defaultValues = ast.literal_eval(os.getenv('DEFAULT_VALUES'))
 samplers = ast.literal_eval(os.getenv('SAMPLERS'))
+forbiddenPrompt = ast.literal_eval(os.getenv('FORBIDDEN_TERMS'))
 
 intents = Intents.default()
 intents.message_content = True
@@ -34,9 +35,31 @@ async def draw(ctx, *args):
     payload = set_defaults(payload, defaultValues)
     payload = add_model(payload, modelDict)
     payload = add_vae(payload, vaeCompatibilityDict)
-    imageName = get_image(payload, url)
-    await ctx.send("The inputs for this image: " + str(payload), file=discord.File(imageName))
-    os.remove(imageName)
+    if ready_check(payload):
+        try:
+            imageName = get_image(payload, url)
+            await ctx.send("The inputs for this image: " + str(payload), file=discord.File(imageName))
+            os.remove(imageName)
+        except:
+            await ctx.send("Image generation failed. Inputs used for this attempt: " + str(payload))
+    else:
+        await ctx.send("Image generation failed. No Prompt.")
+
+#Remove disallowed prompts and ensure no blank items in a prompt
+def sanitize_prompt(payload, forbiddenPrompt):
+    prompts = payload["prompt"].split(', ')
+    sanitized_items = [item for item in prompts if item not in forbiddenPrompt]
+    payload["prompt"] = ', '.join(sanitized_items)
+    if "negative_prompt" in payload:
+        negPrompts = payload["negative_prompt"].split(', ')
+        payload["negative_prompt"] = ', '.join(negPrompts)
+    return payload
+
+def ready_check(payload):
+    status = False
+    if "prompt" in payload:
+        status = True
+    return status
 
 # Removes disallowed api requests
 def remove_invalid_payload(payload, allowedList):
