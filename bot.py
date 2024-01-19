@@ -43,9 +43,13 @@ async def draw(ctx, *args):
     promptReady = ready_check(payload)
     if isReady and promptReady:
         try:
-            imageName = get_image(payload, url)
-            await ctx.send("The inputs for this image: " + str(payload), file=discord.File(imageName))
-            os.remove(imageName)
+            imageHash = save_image_data(get_txt2img(payload,url))
+            files = [imageHash + '.json', imageHash + '.png']
+            await ctx.send("The inputs for this image: " + str(payload))
+            for file in files:
+                await ctx.send(file=discord.File(file))
+            os.remove(imageHash + '.png')
+            os.remove(imageHash + '.json')
         except:
             await ctx.send("Image generation failed. Inputs used for this attempt: " + str(payload))
     else:
@@ -152,12 +156,18 @@ def add_vae(payload, vaeDict):
     payload["override_settings"] = overrideSettings
     return payload
 
-def get_image(payload, url):
+def save_image_data(raw_json):
+    image = Image.open(io.BytesIO(base64.b64decode(raw_json['images'][0])))
+    imageHash = hashlib.md5(image.tobytes()).hexdigest()
+    image.save(imageHash + '.png')
+    del raw_json["images"]
+    del raw_json["info"]
+    with open(imageHash + '.json', 'w') as json_file:
+        json.dump(raw_json, json_file, indent=4)
+    return imageHash
+
+def get_txt2img(payload, url):
     response = requests.post(url=f'{url}/sdapi/v1/txt2img', json=payload)
-    r = response.json()
-    image = Image.open(io.BytesIO(base64.b64decode(r['images'][0])))
-    imageName = hashlib.md5(image.tobytes()).hexdigest() + '.png'
-    image.save(imageName)
-    return imageName
+    return response.json()
 
 bot.run(token)
