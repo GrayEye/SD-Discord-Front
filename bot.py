@@ -10,6 +10,7 @@ from discord import Intents
 from discord.ext import commands
 from dotenv import load_dotenv
 from PIL import Image
+from PIL.PngImagePlugin import PngInfo
 
 load_dotenv()
 token = os.getenv('TOKEN')
@@ -43,13 +44,9 @@ async def draw(ctx, *args):
     promptReady = ready_check(payload)
     if isReady and promptReady:
         try:
-            imageHash = save_image_data(get_txt2img(payload,url))
-            files = [imageHash + '.json', imageHash + '.png']
-            await ctx.send("The inputs for this image: " + str(payload))
-            for file in files:
-                await ctx.send(file=discord.File(file))
+            imageHash = get_image(get_txt2img(payload, url))
+            await ctx.send("The inputs for this image: " + str(payload), file=discord.File(imageHash + ".png"))
             os.remove(imageHash + '.png')
-            os.remove(imageHash + '.json')
         except:
             await ctx.send("Image generation failed. Inputs used for this attempt: " + str(payload))
     else:
@@ -156,13 +153,13 @@ def add_vae(payload, vaeDict):
     payload["override_settings"] = overrideSettings
     return payload
 
-def save_image_data(raw_json):
+def get_image(raw_json):
     image = Image.open(io.BytesIO(base64.b64decode(raw_json['images'][0])))
-    imageHash = hashlib.md5(image.tobytes()).hexdigest()
-    image.save(imageHash + '.png')
     info = json.loads(raw_json["info"])
-    with open(imageHash + '.json', 'w') as json_file:
-        json.dump(info, json_file, indent=4)
+    metadata = PngInfo()
+    metadata.add_text(b"Generation Data", json.dumps(info).encode("latin-1", "strict"))
+    imageHash = hashlib.md5(image.tobytes()).hexdigest()
+    image.save(imageHash + '.png', pnginfo=metadata)
     return imageHash
 
 def get_txt2img(payload, url):
