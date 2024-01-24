@@ -46,9 +46,9 @@ async def draw(ctx, *args):
     if isReady and promptReady:
         try:
             info = get_image(get_txt2img(payload, url))
-            await ctx.send("The user inputs for this image: " + str(payload) + "\n"
-                           "Seed: " + str(info["seed"]) + "\n"
-                           "Subseed: " + str(info["subseed"]),
+            await ctx.send("The user inputs for this image: " + str(payload) +
+                           "\nSeed: " + str(info["seed"]) +
+                           "\nSubseed: " + str(info["subseed"]),
                            file=discord.File(info["imgName"] + ".png"))
             os.remove(info["ImgName"] + '.png')
         except:
