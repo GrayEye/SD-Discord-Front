@@ -47,7 +47,7 @@ async def draw(ctx, *args):
         try:
             info = get_image(get_txt2img(payload, url))
             print(json.dumps(info))
-            await ctx.send("The user inputs for this image: " + str(payload), file=discord.File(info["imgName"] + ".png"))
+            await ctx.send("The user inputs for this image: " + str(payload), file=discord.File(info["ImgName"] + ".png"))
             os.remove(info["ImgName"] + '.png')
         except:
             await ctx.send("Image generation failed. Inputs used for this attempt: " + str(payload))
