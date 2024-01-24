@@ -36,6 +36,7 @@ async def draw(ctx, *args):
     except:
         isReady = False
         await ctx.send("Payload generation Failed. Likely blank `!draw` command.")
+        return
     payload = remove_invalid_payload(payload, allowedList)
     payload = set_maximums(payload, maximumValues)
     payload = set_defaults(payload, defaultValues)
@@ -44,9 +45,12 @@ async def draw(ctx, *args):
     promptReady = ready_check(payload)
     if isReady and promptReady:
         try:
-            imageHash = get_image(get_txt2img(payload, url))
-            await ctx.send("The inputs for this image: " + str(payload), file=discord.File(imageHash + ".png"))
-            os.remove(imageHash + '.png')
+            info = get_image(get_txt2img(payload, url))
+            await ctx.send("The user inputs for this image: " + str(payload) + "\n"
+                           "Seed: " + str(info["seed"]) + "\n"
+                           "Subseed: " + str(info["subseed"]),
+                           file=discord.File(info["imgName"] + ".png"))
+            os.remove(info["ImgName"] + '.png')
         except:
             await ctx.send("Image generation failed. Inputs used for this attempt: " + str(payload))
     else:
@@ -133,13 +137,12 @@ def add_model(payload, modelDict):
                 "sd_model_checkpoint": modelDict.get('default')
             }
             payload["override_settings"] = override_settings
-            payload['model'] = modelDict['default']
     else:
         overrideSettings = {
             "sd_model_checkpoint": modelDict.get('default')
         }
         payload["override_settings"] = overrideSettings
-        payload['model'] = modelDict['default']
+    del payload["model"]
     return payload
 
 def add_vae(payload, vaeDict):
@@ -160,7 +163,8 @@ def get_image(raw_json):
     metadata.add_text(b"Generation Data", json.dumps(info).encode("latin-1", "strict"))
     imageHash = hashlib.md5(image.tobytes()).hexdigest()
     image.save(imageHash + '.png', pnginfo=metadata)
-    return imageHash
+    info["ImgName"] = imageHash
+    return info
 
 def get_txt2img(payload, url):
     response = requests.post(url=f'{url}/sdapi/v1/txt2img', json=payload)
