@@ -137,12 +137,13 @@ def add_model(payload, modelDict):
                 "sd_model_checkpoint": modelDict.get('default')
             }
             payload["override_settings"] = override_settings
+        del payload["model"]
     else:
         overrideSettings = {
             "sd_model_checkpoint": modelDict.get('default')
         }
         payload["override_settings"] = overrideSettings
-    del payload["model"]
+        del payload["model"]
     return payload
 
 def add_vae(payload, vaeDict):
