@@ -46,6 +46,7 @@ async def draw(ctx, *args):
     if isReady and promptReady:
         try:
             info = get_image(get_txt2img(payload, url))
+            print(json.dumps(info))
             await ctx.send("The user inputs for this image: " + str(payload) +
                            "\nSeed: " + str(info["seed"]) +
                            "\nSubseed: " + str(info["subseed"]),
