@@ -163,7 +163,7 @@ def get_image(raw_json):
     info = json.loads(raw_json["info"])
     metadata = PngInfo()
     metadata.add_text(b"Generation Data", json.dumps(info).encode("latin-1", "strict"))
-    imageHash = hashlib.md5(image.tobytes()).hexdigest()
+    imageHash = str(hashlib.md5(image.tobytes()).hexdigest())
     image.save(imageHash + '.png', pnginfo=metadata)
     info["ImgName"] = imageHash
     return info
