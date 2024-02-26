@@ -50,7 +50,7 @@ async def draw(ctx, *args):
             try:
                 info = get_image(get_txt2img(payload, url))
                 print(json.dumps(info))
-                await ctx.send("Image " + i + "/" + batch_count +
+                await ctx.send("Image " + str(i) + "/" + str(batch_count) +
                                "\n`The user inputs for this image: " + str(payload) +
                                "\nSeed: " + str(info["seed"]) +
                                "\nSubseed: " + str(info["subseed"]) + "`",
