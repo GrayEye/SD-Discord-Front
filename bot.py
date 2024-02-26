@@ -14,15 +14,16 @@ from PIL.PngImagePlugin import PngInfo
 
 load_dotenv()
 token = os.getenv('TOKEN')
-url = os.getenv('URL')
-modelDict = ast.literal_eval(os.getenv('MODELS'))
-vaeCompatibilityDict = ast.literal_eval(os.getenv('VAES_AND_COMPATIBILITY'))
-#disallowedList = ast.literal_eval(os.getenv('DISALLOWED'))
-allowedList = ast.literal_eval(os.getenv('ALLOWED'))
-maximumValues = ast.literal_eval(os.getenv('MAX_VALUES'))
-defaultValues = ast.literal_eval(os.getenv('DEFAULT_VALUES'))
-samplers = ast.literal_eval(os.getenv('SAMPLERS'))
-forbiddenPrompt = ast.literal_eval(os.getenv('FORBIDDEN_TERMS'))
+url = os.getenv('URL', 'http://localhost:7860/')
+#batch_size_max = os.getenv('BATCH_SIZE_MAX', 1)
+batch_count_max = os.getenv('BATCH_SIZE_MAX', 1)
+modelDict = ast.literal_eval(os.getenv('MODELS', '{}'))
+vaeCompatibilityDict = ast.literal_eval(os.getenv('VAES_AND_COMPATIBILITY', '{}'))
+allowedList = ast.literal_eval(os.getenv('ALLOWED', '[]'))
+maximumValues = ast.literal_eval(os.getenv('MAX_VALUES', '{}'))
+defaultValues = ast.literal_eval(os.getenv('DEFAULT_VALUES', '{}'))
+samplers = ast.literal_eval(os.getenv('SAMPLERS', '{}'))
+forbiddenPrompt = ast.literal_eval(os.getenv('FORBIDDEN_TERMS', '[]'))
 
 intents = Intents.default()
 intents.message_content = True
@@ -42,18 +43,21 @@ async def draw(ctx, *args):
     payload = set_defaults(payload, defaultValues)
     payload = add_model(payload, modelDict)
     payload = add_vae(payload, vaeCompatibilityDict)
+    batch_count = get_batch_count(payload, batch_count_max)
     promptReady = ready_check(payload)
     if isReady and promptReady:
-        try:
-            info = get_image(get_txt2img(payload, url))
-            print(json.dumps(info))
-            await ctx.send("`The user inputs for this image: " + str(payload) +
-                           "\nSeed: " + str(info["seed"]) +
-                           "\nSubseed: " + str(info["subseed"]) + "`",
-                           file=discord.File(info["ImgName"] + ".png"))
-            os.remove(info["ImgName"] + '.png')
-        except:
-            await ctx.send("Image generation failed. Inputs used for this attempt: " + str(payload))
+        for i in range (1, batch_count+1):
+            try:
+                info = get_image(get_txt2img(payload, url))
+                print(json.dumps(info))
+                await ctx.send("Image " + i + "/" + batch_count +
+                               "\n`The user inputs for this image: " + str(payload) +
+                               "\nSeed: " + str(info["seed"]) +
+                               "\nSubseed: " + str(info["subseed"]) + "`",
+                               file=discord.File(info["ImgName"] + ".png"))
+                os.remove(info["ImgName"] + '.png')
+            except:
+                await ctx.send("Image generation failed. Inputs used for this attempt: " + str(payload))
     else:
         errorMessage = "Image generation failed."
         if not promptReady:
@@ -171,5 +175,16 @@ def get_image(raw_json):
 def get_txt2img(payload, url):
     response = requests.post(url=f'{url}/sdapi/v1/txt2img', json=payload)
     return response.json()
+
+def get_batch_count(payload, batch_count_max):
+    batch_count_int = 1
+    if 'batch_count' in payload:
+        try:
+            batch_count_int = int(payload['batch_count'])
+        except:
+            batch_count_int = 1
+        if batch_count_int > batch_count_max:
+            batch_count_int = batch_count_max
+    return batch_count_int
 
 bot.run(token)
