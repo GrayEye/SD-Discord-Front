@@ -26,7 +26,6 @@ samplers = ast.literal_eval(os.getenv('SAMPLERS', '{}'))
 forbiddenPrompt = ast.literal_eval(os.getenv('FORBIDDEN_TERMS', '[]'))
 
 intents = Intents.default()
-intents.direct_messages = False
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
