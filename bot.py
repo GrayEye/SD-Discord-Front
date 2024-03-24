@@ -1,11 +1,13 @@
 import ast
 import base64
 import discord
+import functools
 import hashlib
 import io
 import json
 import os
 import requests
+import typing
 from discord import Intents
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -52,7 +54,8 @@ async def draw(ctx, *args):
         if isReady and promptReady:
             for i in range (1, batch_count+1):
                 try:
-                    info = get_image(get_txt2img(payload, url))
+                    raw_image = await run_blocking(get_txt2img, payload, url)
+                    info = get_image(raw_image)
                     print(json.dumps(info))
                     await ctx.send("Image " + str(i) + "/" + str(batch_count) +
                                    "\n`The user inputs for this image: " + str(payload) +
@@ -190,5 +193,10 @@ def get_batch_count(payload, batch_count_max):
         if batch_count_int > batch_count_max:
             batch_count_int = batch_count_max
     return batch_count_int
+
+async def run_blocking(blocking_func: typing.Callable, *args, **kwargs) -> typing.Any:
+    """Runs a blocking function in a non-blocking way"""
+    func = functools.partial(blocking_func, *args, **kwargs) # `run_in_executor` doesn't support kwargs, `functools.partial` does
+    return await bot.loop.run_in_executor(None, func)
 
 bot.run(token)
