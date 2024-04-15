@@ -43,7 +43,6 @@ async def upscale(ctx, *args):
         return
     file_request = requests.get(attachment_url)
     pil_image = Image.open(BytesIO(file_request.content))
-    #pil_image = Image.open(img)
     payload = {
         "upscaling_resize": 1.5,
         "upscaler_1": "ESRGAN_4x",
@@ -53,7 +52,7 @@ async def upscale(ctx, *args):
     image = Image.open(io.BytesIO(base64.b64decode(upscaled_image['image'].split(",",1)[0])))
 
     png_payload = {
-        "image": "data:image/png;base64," + image
+        "image": "data:image/png;base64," + upscaled_image['image']
     }
     response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
 
