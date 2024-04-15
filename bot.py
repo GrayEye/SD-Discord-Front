@@ -7,6 +7,7 @@ import io
 import json
 import os
 import requests
+import subprocess
 import typing
 from discord import Intents
 from discord.ext import commands
@@ -19,6 +20,7 @@ token = os.getenv('TOKEN')
 url = os.getenv('URL', 'http://localhost:7860/')
 #batch_size_max = int(os.getenv('BATCH_SIZE_MAX', 1))
 batch_count_max = int(os.getenv('BATCH_COUNT_MAX', 1))
+max_upscale = int(os.getenv('MAX_UPSCALE', 1))
 modelDict = ast.literal_eval(os.getenv('MODELS', '{}'))
 vaeCompatibilityDict = ast.literal_eval(os.getenv('VAES_AND_COMPATIBILITY', '{}'))
 allowedList = ast.literal_eval(os.getenv('ALLOWED', '[]'))
@@ -30,6 +32,35 @@ forbiddenPrompt = ast.literal_eval(os.getenv('FORBIDDEN_TERMS', '[]'))
 intents = Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+@bot.command()
+async def upscale(ctx, *args):
+    try:
+        attachment_url = ctx.message.attachments[0].url
+    except:
+        await ctx.send("No attachment present.")
+        return
+    file_request = requests.get(attachment_url)
+    img = file_request.content
+    pil_image = Image.open(img)
+    payload = {
+        "resize_mode": 0,
+        "show_extras_results": true,
+        "gfpgan_visibility": 0,
+        "codeformer_visibility": 0,
+        "codeformer_weight": 0,
+        "upscaling_resize": 4,
+        "upscaling_resize_w": 512,
+        "upscaling_resize_h": 512,
+        "upscaling_crop": true,
+        "upscaler_1": "ESRGAN_4x",
+        "upscaler_2": "None",
+        "extras_upscaler_2_visibility": 0,
+        "upscale_first": false,
+        "image": pil_to_base64(pil_image)
+}
+    upscaled_image = await run_blocking(get_upscaled, payload, url)
+
 
 @bot.command()
 async def draw(ctx, *args):
@@ -70,6 +101,17 @@ async def draw(ctx, *args):
             if not promptReady:
                 errorMessage = errorMessage + " No prompt, blank prompt, or misspelled the key 'prompt'."
             await ctx.send(errorMessage + " Try again or contact bot owner if issues persist.")
+
+def get_upscaled(upscale_payload, url):
+    response = requests.post(url=f'{url}/sdapi/v1/extra-single-image', json=upscale_payload)
+    return response.json()
+
+    return
+def pil_to_base64(pil_image):
+    with BytesIO() as stream:
+        pil_image.save(stream, "PNG", pnginfo=None)
+        base64_str = str(base64.b64encode(stream.getvalue()), "utf-8")
+        return "data:image/png;base64," + base64_str
 
 #Remove disallowed prompts and ensure no blank items in a prompt
 def sanitize_prompt(payload, forbiddenPrompt):
@@ -172,8 +214,9 @@ def add_vae(payload, vaeDict):
 def get_image(raw_json):
     image = Image.open(io.BytesIO(base64.b64decode(raw_json['images'][0])))
     info = json.loads(raw_json["info"])
+    parameters = json.loads(raw_json["parameters"])
     metadata = PngInfo()
-    metadata.add_text(b"Generation Data", json.dumps(info).encode("latin-1", "strict"))
+    metadata.add_text(b"Generation Data", json.dumps(parameters).encode("latin-1", "strict"))
     imageHash = str(hashlib.md5(image.tobytes()).hexdigest())
     image.save(imageHash + '.png', pnginfo=metadata)
     info["ImgName"] = imageHash
