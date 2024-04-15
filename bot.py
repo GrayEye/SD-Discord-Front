@@ -12,6 +12,7 @@ import typing
 from discord import Intents
 from discord.ext import commands
 from dotenv import load_dotenv
+from io import BytesIO
 from PIL import Image, PngImagePlugin
 from PIL.PngImagePlugin import PngInfo
 
@@ -41,8 +42,8 @@ async def upscale(ctx, *args):
         await ctx.send("No attachment present.")
         return
     file_request = requests.get(attachment_url)
-    img = file_request.content
-    pil_image = Image.open(img)
+    pil_image = Image.open(BytesIO(file_request.content))
+    #pil_image = Image.open(img)
     payload = {
         "resize_mode": 0,
         "show_extras_results": true,
