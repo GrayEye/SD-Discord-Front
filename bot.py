@@ -49,9 +49,7 @@ async def upscale(ctx, *args):
         "gfpgan_visibility": 0,
         "codeformer_visibility": 0,
         "codeformer_weight": 0,
-        "upscaling_resize": 4,
-        "upscaling_resize_w": 512,
-        "upscaling_resize_h": 512,
+        "upscaling_resize": 1.5,
         "upscaling_crop": true,
         "upscaler_1": "ESRGAN_4x",
         "upscaler_2": "None",
@@ -60,6 +58,19 @@ async def upscale(ctx, *args):
         "image": pil_to_base64(pil_image)
 }
     upscaled_image = await run_blocking(get_upscaled, payload, url)
+    image = Image.open(io.BytesIO(base64.b64decode(upscaled_image.split(",", 1)[0])))
+
+    png_payload = {
+        "image": "data:image/png;base64," + i
+    }
+    response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
+
+    pnginfo = PngImagePlugin.PngInfo()
+    pnginfo.add_text("parameters", response2.json().get("info"))
+    imageHash = str(hashlib.md5(image.tobytes()).hexdigest())
+    image.save(imageHash + '.png', pnginfo=pnginfo)
+    await ctx.send(file=discord.File(imageHash + ".png"))
+    os.remove(imageHash + '.png')
 
 
 @bot.command()
@@ -83,7 +94,7 @@ async def draw(ctx, *args):
         batch_count = get_batch_count(payload, batch_count_max)
         promptReady = ready_check(payload)
         if isReady and promptReady:
-            for i in range (1, batch_count+1):
+            for i in range(1, batch_count+1):
                 try:
                     raw_image = await run_blocking(get_txt2img, payload, url)
                     info = get_image(raw_image, url)
@@ -224,14 +235,7 @@ def get_image(raw_json, url):
         pnginfo.add_text("parameters", response2.json().get("info"))
         imageHash = str(hashlib.md5(image.tobytes()).hexdigest())
         image.save(imageHash + '.png', pnginfo=pnginfo)
-
-    #image = Image.open(io.BytesIO(base64.b64decode(raw_json['images'][0])))
     info = json.loads(raw_json["info"])
-    #parameters = json.loads(raw_json["parameters"])
-    #metadata = PngInfo()
-    #metadata.add_text(b"Generation Data", json.dumps(parameters).encode("latin-1", "strict"))
-    #imageHash = str(hashlib.md5(image.tobytes()).hexdigest())
-    #image.save(imageHash + '.png')#, pnginfo=metadata)
     info["ImgName"] = imageHash
     return info
 
