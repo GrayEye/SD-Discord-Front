@@ -56,10 +56,8 @@ async def upscale(ctx, *args):
     }
     response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
 
-    print(upscaled_image['html_info'])
-
     pnginfo = PngImagePlugin.PngInfo()
-    pnginfo.add_text("parameters", response2.json().get("info"))
+    pnginfo.add_text("parameters", upscaled_image['html_info'])#response2.json().get("info"))
     imageHash = str(hashlib.md5(image.tobytes()).hexdigest())
     image.save(imageHash + '.png', pnginfo=pnginfo)
     await ctx.send(file=discord.File(imageHash + ".png"))
