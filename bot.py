@@ -53,7 +53,7 @@ async def upscale(ctx, *args):
     image = Image.open(io.BytesIO(base64.b64decode(upscaled_image['image'].split(",",1)[0])))
 
     png_payload = {
-        "image": "data:image/png;base64," + i
+        "image": "data:image/png;base64," + upscaled_image
     }
     response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
 
