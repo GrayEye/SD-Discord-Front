@@ -50,7 +50,7 @@ async def upscale(ctx, *args):
         "image": pil_to_base64(pil_image)
 }
     upscaled_image = await run_blocking(get_upscaled, payload, url)
-    image = Image.open(io.BytesIO(base64.b64decode(upscaled_image.image)))
+    image = Image.open(io.BytesIO(base64.b64decode(upscaled_image['image'].split(",",1)[0])))
 
     png_payload = {
         "image": "data:image/png;base64," + i
