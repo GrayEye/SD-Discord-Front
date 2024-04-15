@@ -45,17 +45,8 @@ async def upscale(ctx, *args):
     pil_image = Image.open(BytesIO(file_request.content))
     #pil_image = Image.open(img)
     payload = {
-        "resize_mode": 0,
-        "show_extras_results": true,
-        "gfpgan_visibility": 0,
-        "codeformer_visibility": 0,
-        "codeformer_weight": 0,
         "upscaling_resize": 1.5,
-        "upscaling_crop": true,
         "upscaler_1": "ESRGAN_4x",
-        "upscaler_2": "None",
-        "extras_upscaler_2_visibility": 0,
-        "upscale_first": false,
         "image": pil_to_base64(pil_image)
 }
     upscaled_image = await run_blocking(get_upscaled, payload, url)
