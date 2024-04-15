@@ -42,22 +42,22 @@ async def upscale(ctx, *args):
         await ctx.send("No attachment present.")
         return
     file_request = requests.get(attachment_url)
-    pil_image = pil_to_base64(Image.open(BytesIO(file_request.content)))
+    pil_image = Image.open(BytesIO(file_request.content))
     payload = {
         "upscaling_resize": 1.5,
         "upscaler_1": "ESRGAN_4x",
-        "image": pil_image
+        "image": pil_to_base64(pil_image)
 }
     upscaled_image = await run_blocking(get_upscaled, payload, url)
     image = Image.open(io.BytesIO(base64.b64decode(upscaled_image['image'].split(",",1)[0])))
 
     png_payload = {
-        "image": "data:image/png;base64," + pil_image
+        "image": "data:image/png;base64," + upscaled_image['image']
     }
     response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
 
     pnginfo = PngImagePlugin.PngInfo()
-    pnginfo.add_text("parameters", response2.json().get("info"))
+    pnginfo.add_text("parameters", upscaled_image['html_info'])#response2.json().get("info"))
     imageHash = str(hashlib.md5(image.tobytes()).hexdigest())
     image.save(imageHash + '.png', pnginfo=pnginfo)
     await ctx.send(file=discord.File(imageHash + ".png"))
