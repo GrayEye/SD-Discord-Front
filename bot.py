@@ -12,7 +12,7 @@ import typing
 from discord import Intents
 from discord.ext import commands
 from dotenv import load_dotenv
-from PIL import Image
+from PIL import Image, PngImagePlugin
 from PIL.PngImagePlugin import PngInfo
 
 load_dotenv()
@@ -86,7 +86,7 @@ async def draw(ctx, *args):
             for i in range (1, batch_count+1):
                 try:
                     raw_image = await run_blocking(get_txt2img, payload, url)
-                    info = get_image(raw_image)
+                    info = get_image(raw_image, url)
                     print(json.dumps(info))
                     await ctx.send("Image " + str(i) + "/" + str(batch_count) +
                                    "\n`The user inputs for this image: " + str(payload) +
@@ -211,14 +211,27 @@ def add_vae(payload, vaeDict):
     payload["override_settings"] = overrideSettings
     return payload
 
-def get_image(raw_json):
-    image = Image.open(io.BytesIO(base64.b64decode(raw_json['images'][0])))
+def get_image(raw_json, url):
+    for i in raw_json['images']:
+        image = Image.open(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
+
+        png_payload = {
+            "image": "data:image/png;base64," + i
+        }
+        response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
+
+        pnginfo = PngImagePlugin.PngInfo()
+        pnginfo.add_text("parameters", response2.json().get("info"))
+        imageHash = str(hashlib.md5(image.tobytes()).hexdigest())
+        image.save(imageHash + '.png', pnginfo=pnginfo)
+
+    #image = Image.open(io.BytesIO(base64.b64decode(raw_json['images'][0])))
     info = json.loads(raw_json["info"])
-    parameters = json.loads(raw_json["parameters"])
-    metadata = PngInfo()
-    metadata.add_text(b"Generation Data", json.dumps(parameters).encode("latin-1", "strict"))
-    imageHash = str(hashlib.md5(image.tobytes()).hexdigest())
-    image.save(imageHash + '.png')#, pnginfo=metadata)
+    #parameters = json.loads(raw_json["parameters"])
+    #metadata = PngInfo()
+    #metadata.add_text(b"Generation Data", json.dumps(parameters).encode("latin-1", "strict"))
+    #imageHash = str(hashlib.md5(image.tobytes()).hexdigest())
+    #image.save(imageHash + '.png')#, pnginfo=metadata)
     info["ImgName"] = imageHash
     return info
 
