@@ -47,12 +47,12 @@ async def upscale(ctx, *args):
         "upscaling_resize": 1.5,
         "upscaler_1": "ESRGAN_4x",
         "image": pil_to_base64(pil_image)
-}
+    }
     upscaled_image = await run_blocking(get_upscaled, payload, url)
-    image = Image.open(io.BytesIO(base64.b64decode(upscaled_image['image'].split(",",1)[0])))
+    image = Image.open(io.BytesIO(base64.b64decode(upscaled_image['image'][0])))#.split(",",1)[0])))
 
     png_payload = {
-        "image": "data:image/png;base64," + upscaled_image['image']
+        "image": "data:image/png;base64," + upscaled_image['image'] #Somehwere here is where I need to fix parameters
     }
     response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
 
