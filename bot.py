@@ -220,7 +220,7 @@ def add_vae(payload, vaeDict):
 def add_clip_skip(payload):
     if 'clip_skip' in payload:
         overrideSettings = payload.get("override_settings")
-        overrideSettings["CLIP_stop_at_last_layers"] = str(payload.get('clip_skip'))
+        overrideSettings["CLIP_stop_at_last_layers"] = payload.get('clip_skip')
         payload["override_settings"] = overrideSettings
         del payload['clip_skip']
     return payload
