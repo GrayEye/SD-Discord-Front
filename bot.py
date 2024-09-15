@@ -104,6 +104,9 @@ async def draw(ctx, *args):
                 errorMessage = errorMessage + " No prompt, blank prompt, or misspelled the key 'prompt'."
             await ctx.send(errorMessage + " Try again or contact bot owner if issues persist.")
 
+#def pgquant(png_file):
+    #Use pngquant to compress image to 10MB or less
+
 def get_upscaled(upscale_payload, url):
     response = requests.post(url=f'{url}/sdapi/v1/extra-single-image', json=upscale_payload)
     return response.json()
@@ -211,6 +214,13 @@ def add_vae(payload, vaeDict):
             vae = key
     overrideSettings["sd_vae"] = vae
     payload["override_settings"] = overrideSettings
+    return payload
+
+def add_clip_skip(payload):
+    if 'clip_skip' in payload:
+        overrideSettings = payload.get('override_settings')
+        overrideSettings["clip_skip"] = payload.get('clip_skip')
+        payload["override_settings"] = overrideSettings
     return payload
 
 def get_image(raw_json, url):
