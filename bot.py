@@ -82,6 +82,7 @@ async def draw(ctx, *args):
         payload = set_defaults(payload, defaultValues)
         payload = add_model(payload, modelDict)
         payload = add_vae(payload, vaeCompatibilityDict)
+        payload = add_clip_skip(payload)
         batch_count = get_batch_count(payload, batch_count_max)
         promptReady = ready_check(payload)
         if isReady and promptReady:
@@ -218,9 +219,10 @@ def add_vae(payload, vaeDict):
 
 def add_clip_skip(payload):
     if 'clip_skip' in payload:
-        overrideSettings = payload.get('override_settings')
+        overrideSettings = payload.get("override_settings")
         overrideSettings["CLIP_stop_at_last_layers"] = payload.get('clip_skip')
         payload["override_settings"] = overrideSettings
+        del payload['clip_skip']
     return payload
 
 def get_image(raw_json, url):
